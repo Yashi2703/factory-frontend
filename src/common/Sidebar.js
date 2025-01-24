@@ -1,7 +1,7 @@
 import { Drawer, Grid2, ListItem, Typography, List } from "@mui/material";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import React from "react";
-import { SidebarData } from "./data";
+import { SidebarData } from "./sidebarData";
 import { useNavigate } from "react-router-dom";
 const Sidebar = () => {
     const navigate = useNavigate()

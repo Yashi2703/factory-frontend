@@ -2,15 +2,14 @@ import { Box, Button, Card, Grid2, IconButton, Modal, Table, TableBody, TableCel
 import React, { useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import { TableBar } from "@mui/icons-material";
-import TableToolbar from "../Tableui/TableToolbar";
-import Scrollbar from "../Scrollbar/scrollbar";
-import TableHeadCell from "../Tableui/TableHeadCell";
-import Loader from "../Tableui/Loader";
-import { ProductHeader } from "./Header";
+import TableToolbar from "../../../Tableui/TableToolbar";
+import Scrollbar from "../../../Scrollbar/scrollbar";
+import TableHeadCell from "../../../Tableui/TableHeadCell";
+import Loader from "../../../Tableui/Loader";
+import { ProductHeader } from "../../../common/HeadCell";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { BootstrapTooltipUi } from "../Tableui/BootstrapToolTip";
-import { useNavigate } from "react-router-dom";
+import { BootstrapTooltipUi } from "../../../Tableui/BootstrapToolTip";
 const style = {
     position: "absolute",
     top: "50%",
@@ -22,11 +21,11 @@ const style = {
     boxShadow: 24,
     p: 4,
 };
-export const Order = () => {
+export const ProductType = () => {
     const headLabel = [
         "Carbon", "Sediment"
     ];
-    const navigate = useNavigate()
+    const [addProduct, setAddProduct] = useState(false)
     return (
         <Box>
             <div className="flexTop">
@@ -35,14 +34,14 @@ export const Order = () => {
                     color="inherit"
                     startIcon={<AddIcon />}
                     className="blueButton ms-2"
-                    onClick={() => navigate("/add-order")}
+                    onClick={() => setAddProduct(true)}
                 >
-                    Add Order
+                    Add Product Type
                 </Button>
             </div>
             <Card className="cardFix">
                 <div className="allocation">
-                    <TableToolbar title="Order" />
+                    <TableToolbar title="Product Type" />
                 </div>
                 <Scrollbar>
                     <TableContainer className="tableResponsive">
@@ -84,6 +83,55 @@ export const Order = () => {
                                 })}
 
                             </TableBody>
+                            {addProduct && <Modal open={addProduct}
+                                onClose={() => setAddProduct(false)}
+                                aria-labelledby="modal-modal-title"
+                                aria-describedby="modal-modal-description">
+                                <Box sx={style} className="confirmModal">
+                                    <Grid2 container columnSpacing={2} rowSpacing={3}>
+                                        <Grid2 size={12}>
+                                            <h4
+                                                style={{
+                                                    marginBottom: "20px",
+                                                    fontWeight: "600",
+                                                }}
+                                            >
+                                                Add Product Type
+                                            </h4>
+                                            <Grid2 size={12}>
+                                                <TextField placeholder="Add Product" />
+                                            </Grid2>
+                                            <Grid2 size={12} mt = {3}>
+                                                <TextField placeholder="Add Product" />
+                                            </Grid2>
+                                        </Grid2>
+                                    </Grid2>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            marginTop: "50px",
+                                            justifyContent: "center",
+                                            gap: "10px",
+                                        }}
+                                    >
+
+                                        <Button
+                                            className="blueButton"
+                                            sx={{ p: "8px 25px" }}
+                                        // onClick={handleSubmitImport}
+                                        >
+                                            Save
+                                        </Button>
+                                        <Button
+                                            className="blueButton cancel"
+                                            sx={{ p: "8px 25px" }}
+                                            onClick={() => setAddProduct(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </div>
+                                </Box>
+                            </Modal>}
                         </Table>
                     </TableContainer>
                 </Scrollbar>

@@ -1,7 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import React from "react";
-import Sidebar from "./Sidebar";
-import Navbar from "./Navbar";
+import Sidebar from "../common/Sidebar";
+import Navbar from "../common/Navbar";
 
 export const MainLayout = ({ children }) => {
   return (

@@ -16,15 +16,15 @@ import React, { useEffect, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
-import TableToolbar from "../Tableui/TableToolbar";
-import Scrollbar from "../Scrollbar/scrollbar";
-import TableHeadCell from "../Tableui/TableHeadCell";
-import { BootstrapTooltipUi } from "../Tableui/BootstrapToolTip";
+import TableToolbar from "../../../Tableui/TableToolbar";
+import Scrollbar from "../../../Scrollbar/scrollbar";
+import TableHeadCell from "../../../Tableui/TableHeadCell";
+import { BootstrapTooltipUi } from "../../../Tableui/BootstrapToolTip";
 import * as Yup from "yup";
 import { Formik, Form, Field } from "formik";
-import { apiGetMethod, apiPostMethod } from "../api";
-import { apiRoute } from "../api/route";
-import { ProductHeader } from "./Header";
+import { apiGetMethod, apiPostMethod } from "../../../api";
+import { apiRoute } from "../../../api/route";
+import { ProductHeader } from "../../../common/HeadCell";
 
 const style = {
   position: "absolute",

@@ -1,10 +1,10 @@
 import { Route, BrowserRouter, Routes } from 'react-router-dom';
 import './App.css';
 import { MainLayout } from './Components/Mainlayout';
-import { Product } from './Components/Product';
-import { ProductType } from './Components/ProductType';
-import { Order } from './Components/Order';
-import { Addorder } from './Components/AddOrder';
+import { Product } from './Components/pages/Product/Product';
+import { ProductType } from './Components/pages/Product/ProductType';
+import { Order } from './Components/pages/Order';
+import { Addorder } from './Components/pages/Addorder';
 function App() {
   return (
     <div className="App">
