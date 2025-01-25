@@ -22,21 +22,12 @@ import TableHeadCell from "../../../Tableui/TableHeadCell";
 import { BootstrapTooltipUi } from "../../../Tableui/BootstrapToolTip";
 import * as Yup from "yup";
 import { Formik, Form, Field } from "formik";
-import { apiGetMethod, apiPostMethod } from "../../../api";
+import { apiDeleteMethod, apiGetMethod, apiPostMethod, apiPutMethod } from "../../../api";
 import { apiRoute } from "../../../api/route";
 import { ProductHeader } from "../../../common/HeadCell";
-
-const style = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 475,
-  bgcolor: "background.paper",
-  border: "2px solid #000",
-  boxShadow: 24,
-  p: 4,
-};
+import { style } from "../../../common/Modelui";
+import DeleteModal from "../../../common/DeleteModal";
+import { toast } from "react-toastify";
 
 const validationSchema = Yup.object().shape({
   filter: Yup.string().required("Filter is required"),
@@ -52,11 +43,14 @@ export const Product = () => {
   const [getId, setGetId] = useState("");
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      const obj = { name: values.filter };
-      const response = await apiPostMethod(`${apiRoute.product}`, obj);
+      const obj = { filter: values.filter };
+      let url = getId ? apiPutMethod(`${apiRoute.editProduct}/${getId}`,obj) : await apiPostMethod(`${apiRoute.product}`, obj);
+      const response = url
       console.log(response);
+      toast.success(response?.message)
       apiGetProduct();
     } catch (err) {
+      toast.error(err?.data?.message)
       console.log(err);
     } finally {
       setSubmitting(false);
@@ -80,7 +74,44 @@ export const Product = () => {
       setGetId("");
     }
   }, [addProduct]);
-  console.log(getId, "===========getId======");
+  const deleteData = () => {
+    if (!getId) {
+      toast.error("Error: Product ID is missing!");
+      return;
+    }
+
+    const url = `/filter/delete-filter/${getId}`;
+    console.log("Deleting from URL:", url);
+
+    apiDeleteMethod(url)
+      .then((response) => {
+        console.log("Delete Response:", response); // Debugging response
+        setDeleteModal(false);
+        toast.success(response?.message || "Deleted successfully!");
+        apiGetMethod(); // Refresh data
+      })
+      .catch((err) => {
+        console.error("Delete Error:", err);
+        toast.error(err?.data?.message || "An error occurred while deleting.");
+      });
+  };
+
+  const editById = () => {
+    apiGetMethod(`${apiRoute.editProductyId}/${getId}`).then((res) => {
+      setInitialValue({
+        filter: res?.data?.filter || "",
+      });
+    }).catch((err) => {
+      console.error("Delete Error:", err);
+      toast.error(err?.data?.message || "An error occurred while deleting.");
+    })
+  }
+  useEffect(() => {
+    if (getId !== "" && addProduct == true) {
+      editById()
+    }
+  }, [getId])
+  console.log(initialValues)
   return (
     <Box>
       <div className="flexTop">
@@ -105,7 +136,7 @@ export const Product = () => {
               <TableBody>
                 {data.map((item, idx) => (
                   <TableRow key={idx}>
-                    <TableCell>{item?.name}</TableCell>
+                    <TableCell>{item?.filter}</TableCell>
                     <TableCell align="center">
                       <BootstrapTooltipUi title="Edit" placement="top">
                         <IconButton
@@ -158,23 +189,23 @@ export const Product = () => {
             >
               {({ isSubmitting }) => (
                 <Form>
-                  <Grid2 container spacing={2}>
-                    <Grid2 xs={12}>
-                      <h4 style={{ textAlign: "center", fontWeight: 600 }}>
+                  <Grid2 container columnSpacing={2} rowSpacing={2}>
+                    <Grid2 size={12}>
+                      <h4 style={{ textAlign: "center", fontWeight: 600, fontSize: 24 }}>
                         {getId ? "Edit" : "Add"} Product
                       </h4>
                     </Grid2>
-                    <Grid2 xs={12}>
-                      <Field
-                        as={TextField}
-                        className="inputText"
-                        autoComplete="off"
-                        name="filter"
-                        label="Filter"
-                        fullWidth
-                        variant="outlined"
-                      />
-                    </Grid2>
+                    {/* <Grid2 xs={12}> */}
+                    <Field
+                      as={TextField}
+                      className="inputText"
+                      autoComplete="off"
+                      name="filter"
+                      label="Filter"
+                      fullWidth
+                      variant="outlined"
+                    />
+                    {/* </Grid2> */}
                   </Grid2>
                   <div
                     style={{
@@ -207,46 +238,7 @@ export const Product = () => {
         </Modal>
       )}
       {deleteModal && (
-        <Modal
-          open={deleteModal}
-          onClose={() => setDeleteModal(false)}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
-        >
-          <Box sx={style} className="confirmModal">
-            <Grid2 container spacing={2}>
-              <Grid2 xs={12}>
-                <h4 style={{ textAlign: "center", fontWeight: 600 }}>
-                  Delete Product
-                </h4>
-              </Grid2>
-              <Grid2 xs={12}>
-                <p>Are you sure you want to delete this product?</p>
-              </Grid2>
-            </Grid2>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                gap: "10px",
-                marginTop: "20px",
-              }}
-            >
-              <Button
-                variant="contained"
-                color="error"
-                sx={{ p: "8px 25px" }}
-                onClick={() => {
-                  // delete product
-                  console.log(getId);
-                  setDeleteModal(false);
-                }}
-              >
-                Delete
-              </Button>
-            </div>
-          </Box>
-        </Modal>
+        <DeleteModal isModalOpen={deleteModal} setIsModalOpen={setDeleteModal} deleteData={deleteData} />
       )}
     </Box>
   );

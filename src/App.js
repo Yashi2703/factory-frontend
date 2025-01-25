@@ -3,8 +3,8 @@ import './App.css';
 import { MainLayout } from './Components/Mainlayout';
 import { Product } from './Components/pages/Product/Product';
 import { ProductType } from './Components/pages/Product/ProductType';
-import { Order } from './Components/pages/Order';
-import { Addorder } from './Components/pages/Addorder';
+import { Order } from './Components/pages/Order/Order';
+import { Addorder } from './Components/pages/Order/AddOrder';
 function App() {
   return (
     <div className="App">

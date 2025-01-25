@@ -65,3 +65,9 @@
 .blueButton.cancel {
   background-color: #41424c !important;
 }
+.confirmModal {
+  border: none !important;
+  border-radius: 8px !important;
+  text-align: center !important;
+  width: 1101px;
+}

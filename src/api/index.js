@@ -52,3 +52,27 @@ export const apiGetMethod = (url, cancelToken = null, token = null) => {
             });
     });
 };
+
+export const apiDeleteMethod = (url) => {
+    console.log("API Call URL:", url); // Debugging log
+    return axios.delete(`${apiEndpoint}${url}`).then((res) => res.data);
+  };
+export const apiPutMethod = (
+    url,
+    data,
+    cancelToken = null,
+    ct = null,
+    token = ""
+) => {
+    return new Promise((resolve, reject) => {
+        const configData = generateConfigData(cancelToken, token);
+        axios
+            .put(`${apiEndpoint}${url}`, data)
+            .then((res) => {
+                resolve(res.data);
+            })
+            .catch((err) => {
+                reject(err.response);
+            });
+    });
+};
