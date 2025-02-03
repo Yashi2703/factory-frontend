@@ -21,8 +21,13 @@ import Scrollbar from "../../../Scrollbar/scrollbar";
 import TableHeadCell from "../../../Tableui/TableHeadCell";
 import { BootstrapTooltipUi } from "../../../Tableui/BootstrapToolTip";
 import * as Yup from "yup";
-import { Formik, Form, Field } from "formik";
-import { apiDeleteMethod, apiGetMethod, apiPostMethod, apiPutMethod } from "../../../api";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import {
+  apiDeleteMethod,
+  apiGetMethod,
+  apiPostMethod,
+  apiPutMethod,
+} from "../../../api";
 import { apiRoute } from "../../../api/route";
 import { ProductHeader } from "../../../common/HeadCell";
 import { style } from "../../../common/Modelui";
@@ -44,23 +49,43 @@ export const Product = () => {
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       const obj = { filter: values.filter };
-      let url = getId ? apiPutMethod(`${apiRoute.editProduct}/${getId}`,obj) : await apiPostMethod(`${apiRoute.product}`, obj);
-      const response = url
+      let response = getId
+        ? await apiPutMethod(`${apiRoute.editProduct}/${getId}`, obj)
+        : await apiPostMethod(`${apiRoute.product}`, obj);
       console.log(response);
-      toast.success(response?.message)
-      apiGetProduct();
+      if (response) {
+        if (getId) {
+          setData((prevData) => {
+            const _tempData = [...prevData];
+            const updatedIndex = _tempData.findIndex(
+              (fi) => fi._id === response.data._id
+            );
+            _tempData[updatedIndex] = response.data;
+            return _tempData;
+          });
+          toast.success("Filter Updated Successfully");
+        } else {
+          setData((prevData) => {
+            return [...prevData, response.data];
+          });
+          toast.success("Filter Added Successfully");
+        }
+      } else {
+        toast.error(`Error: Failed to ${getId ? "Update" : "Add"} filter!`);
+      }
     } catch (err) {
-      toast.error(err?.data?.message)
+      toast.error(err?.data?.message);
       console.log(err);
     } finally {
       setSubmitting(false);
       setAddProduct(false);
     }
   };
+
   const apiGetProduct = async () => {
     try {
       await apiGetMethod(`${apiRoute.getProduct}`).then((res) => {
-        setData(res?.data);
+        setData(res?.data || []);
       });
     } catch (err) {
       console.log(err);
@@ -81,14 +106,15 @@ export const Product = () => {
     }
 
     const url = `/filter/delete-filter/${getId}`;
-    console.log("Deleting from URL:", url);
 
     apiDeleteMethod(url)
       .then((response) => {
         console.log("Delete Response:", response); // Debugging response
         setDeleteModal(false);
+        setData((prevData) => {
+          return prevData.filter((item) => item._id !== getId);
+        });
         toast.success(response?.message || "Deleted successfully!");
-        apiGetMethod(); // Refresh data
       })
       .catch((err) => {
         console.error("Delete Error:", err);
@@ -97,21 +123,23 @@ export const Product = () => {
   };
 
   const editById = () => {
-    apiGetMethod(`${apiRoute.editProductyId}/${getId}`).then((res) => {
-      setInitialValue({
-        filter: res?.data?.filter || "",
+    apiGetMethod(`${apiRoute.editProductyId}/${getId}`)
+      .then((res) => {
+        setInitialValue({
+          filter: res?.data?.filter || "",
+        });
+      })
+      .catch((err) => {
+        console.error("Delete Error:", err);
+        toast.error(err?.data?.message || "An error occurred while deleting.");
       });
-    }).catch((err) => {
-      console.error("Delete Error:", err);
-      toast.error(err?.data?.message || "An error occurred while deleting.");
-    })
-  }
+  };
   useEffect(() => {
     if (getId !== "" && addProduct == true) {
-      editById()
+      editById();
     }
-  }, [getId])
-  console.log(initialValues)
+  }, [getId]);
+  console.log({ data, initialValues });
   return (
     <Box>
       <div className="flexTop">
@@ -120,7 +148,11 @@ export const Product = () => {
           color="inherit"
           startIcon={<AddIcon />}
           className="blueButton ms-2"
-          onClick={() => setAddProduct(true)}
+          onClick={() => {
+            setInitialValue({ filter: "" }); // Reset initial values
+            setGetId(""); // Ensure it's a new entry
+            setAddProduct(true);
+          }}
         >
           Add Product
         </Button>
@@ -134,41 +166,52 @@ export const Product = () => {
             <Table sx={{ minWidth: 800 }}>
               <TableHeadCell headLabel={ProductHeader} />
               <TableBody>
-                {data.map((item, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>{item?.filter}</TableCell>
-                    <TableCell align="center">
-                      <BootstrapTooltipUi title="Edit" placement="top">
-                        <IconButton
-                          className="outerborder"
-                          aria-label="Edit"
-                          onClick={() => {
-                            {
-                              setGetId(item?._id);
-                              setAddProduct(true);
-                            }
-                          }}
-                        >
-                          <DriveFileRenameOutlineIcon />
-                        </IconButton>
-                      </BootstrapTooltipUi>
-                      <BootstrapTooltipUi title="Delete" placement="top">
-                        <IconButton
-                          className="outerborder"
-                          aria-label="Delete"
-                          onClick={() => {
-                            {
-                              setGetId(item?._id);
-                              setDeleteModal(true);
-                            }
-                          }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </BootstrapTooltipUi>
+                {data?.length > 0 ? (
+                  data.map((item, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{item?.filter}</TableCell>
+                      <TableCell align="center">
+                        <BootstrapTooltipUi title="Edit" placement="top">
+                          <IconButton
+                            className="outerborder"
+                            aria-label="Edit"
+                            onClick={() => {
+                              {
+                                setGetId(item?._id);
+                                setAddProduct(true);
+                              }
+                            }}
+                          >
+                            <DriveFileRenameOutlineIcon />
+                          </IconButton>
+                        </BootstrapTooltipUi>
+                        <BootstrapTooltipUi title="Delete" placement="top">
+                          <IconButton
+                            className="outerborder"
+                            aria-label="Delete"
+                            onClick={() => {
+                              {
+                                setGetId(item?._id);
+                                setDeleteModal(true);
+                              }
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </BootstrapTooltipUi>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={ProductHeader?.length}
+                      style={{ textAlign: "center", fontWeight: 700 }}
+                    >
+                      No Data Found
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -191,7 +234,13 @@ export const Product = () => {
                 <Form>
                   <Grid2 container columnSpacing={2} rowSpacing={2}>
                     <Grid2 size={12}>
-                      <h4 style={{ textAlign: "center", fontWeight: 600, fontSize: 24 }}>
+                      <h4
+                        style={{
+                          textAlign: "center",
+                          fontWeight: 600,
+                          fontSize: 24,
+                        }}
+                      >
                         {getId ? "Edit" : "Add"} Product
                       </h4>
                     </Grid2>
@@ -204,6 +253,11 @@ export const Product = () => {
                       label="Filter"
                       fullWidth
                       variant="outlined"
+                    />
+                    <ErrorMessage
+                      name="filter"
+                      component="div"
+                      className="error"
                     />
                     {/* </Grid2> */}
                   </Grid2>
@@ -238,7 +292,11 @@ export const Product = () => {
         </Modal>
       )}
       {deleteModal && (
-        <DeleteModal isModalOpen={deleteModal} setIsModalOpen={setDeleteModal} deleteData={deleteData} />
+        <DeleteModal
+          isModalOpen={deleteModal}
+          setIsModalOpen={setDeleteModal}
+          deleteData={deleteData}
+        />
       )}
     </Box>
   );
