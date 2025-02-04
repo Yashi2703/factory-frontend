@@ -52,7 +52,6 @@ export const Product = () => {
       let response = getId
         ? await apiPutMethod(`${apiRoute.editProduct}/${getId}`, obj)
         : await apiPostMethod(`${apiRoute.product}`, obj);
-      console.log(response);
       if (response) {
         if (getId) {
           setData((prevData) => {
@@ -75,7 +74,6 @@ export const Product = () => {
       }
     } catch (err) {
       toast.error(err?.data?.message);
-      console.log(err);
     } finally {
       setSubmitting(false);
       setAddProduct(false);
@@ -109,7 +107,6 @@ export const Product = () => {
 
     apiDeleteMethod(url)
       .then((response) => {
-        console.log("Delete Response:", response); // Debugging response
         setDeleteModal(false);
         setData((prevData) => {
           return prevData.filter((item) => item._id !== getId);
@@ -117,7 +114,6 @@ export const Product = () => {
         toast.success(response?.message || "Deleted successfully!");
       })
       .catch((err) => {
-        console.error("Delete Error:", err);
         toast.error(err?.data?.message || "An error occurred while deleting.");
       });
   };
@@ -130,7 +126,6 @@ export const Product = () => {
         });
       })
       .catch((err) => {
-        console.error("Delete Error:", err);
         toast.error(err?.data?.message || "An error occurred while deleting.");
       });
   };
@@ -139,7 +134,6 @@ export const Product = () => {
       editById();
     }
   }, [getId]);
-  console.log({ data, initialValues });
   return (
     <Box>
       <div className="flexTop">
@@ -229,8 +223,9 @@ export const Product = () => {
               initialValues={initialValues}
               validationSchema={validationSchema}
               onSubmit={handleSubmit}
+              enableReinitialize
             >
-              {({ isSubmitting }) => (
+              {({ isSubmitting, values, handleChange, setFieldValue }) => (
                 <Form>
                   <Grid2 container columnSpacing={2} rowSpacing={2}>
                     <Grid2 size={12}>
@@ -244,7 +239,6 @@ export const Product = () => {
                         {getId ? "Edit" : "Add"} Product
                       </h4>
                     </Grid2>
-                    {/* <Grid2 xs={12}> */}
                     <Field
                       as={TextField}
                       className="inputText"
@@ -253,13 +247,13 @@ export const Product = () => {
                       label="Filter"
                       fullWidth
                       variant="outlined"
+                      onChange={handleChange} // Formik ka handleChange use karein
                     />
                     <ErrorMessage
                       name="filter"
                       component="div"
                       className="error"
                     />
-                    {/* </Grid2> */}
                   </Grid2>
                   <div
                     style={{
