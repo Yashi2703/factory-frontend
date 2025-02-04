@@ -4,4 +4,6 @@ export const apiRoute = {
     deleteProduct:"/filter/delete-filter",
     editProductyId:"/filter/filter-byid",
     editProduct:"/filter/edit-filter",
+    filterType:"/filter-type/add-filter",
+    editFilterType:"/filter-type/edit-filter"
 }
