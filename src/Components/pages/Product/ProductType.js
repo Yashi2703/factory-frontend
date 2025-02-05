@@ -1,4 +1,5 @@
 import {
+  Autocomplete,
   Box,
   Button,
   Card,
@@ -23,7 +24,12 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { BootstrapTooltipUi } from "../../../Tableui/BootstrapToolTip";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import * as Yup from "yup";
-import { apiGetMethod, apiPostMethod, apiPutMethod } from "../../../api";
+import {
+  apiDeleteMethod,
+  apiGetMethod,
+  apiPostMethod,
+  apiPutMethod,
+} from "../../../api";
 import { apiRoute } from "../../../api/route";
 import { toast } from "react-toastify";
 const style = {
@@ -54,30 +60,31 @@ export const ProductType = () => {
   });
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
+      console.log(values,"========values=====")
       const obj = { name: values.filter, modelId: values.filterId };
-      let response = getId
-        ? await apiPutMethod(`${apiRoute.editFilterType}/${getId}`, obj)
-        : await apiPostMethod(`${apiRoute.filterType}`, obj);
-      if (response) {
-        if (getId) {
-          setData((prevData) => {
-            const _tempData = [...prevData];
-            const updatedIndex = _tempData.findIndex(
-              (fi) => fi._id === response.data._id
-            );
-            _tempData[updatedIndex] = response.data;
-            return _tempData;
-          });
-          toast.success("FilterType Updated Successfully");
-        } else {
-          setData((prevData) => {
-            return [...prevData, response.data];
-          });
-          toast.success("FilterType Added Successfully");
-        }
-      } else {
-        toast.error(`Error: Failed to ${getId ? "Update" : "Add"} filter!`);
-      }
+      // let response = getId
+      //   ? await apiPutMethod(`${apiRoute.editFilterType}/${getId}`, obj)
+      //   : await apiPostMethod(`${apiRoute.filterType}`, obj);
+      // if (response) {
+      //   if (getId) {
+      //     setData((prevData) => {
+      //       const _tempData = [...prevData];
+      //       const updatedIndex = _tempData.findIndex(
+      //         (fi) => fi._id === response.data._id
+      //       );
+      //       _tempData[updatedIndex] = response.data;
+      //       return _tempData;
+      //     });
+      //     toast.success("FilterType Updated Successfully");
+      //   } else {
+      //     setData((prevData) => {
+      //       return [...prevData, response.data];
+      //     });
+      //     toast.success("FilterType Added Successfully");
+      //   }
+      // } else {
+      //   toast.error(`Error: Failed to ${getId ? "Update" : "Add"} filter!`);
+      // }
     } catch (err) {
       toast.error(err?.data?.message);
     } finally {
@@ -87,8 +94,16 @@ export const ProductType = () => {
   };
   const apiGetProduct = async () => {
     try {
+      let array = [];
       await apiGetMethod(`${apiRoute.getProduct}`).then((res) => {
-        setFilterData(res?.data || []);
+        res?.data?.map((item) => {
+          let obj = {
+            value: item?._id,
+            label: item?.filter,
+          };
+          array.push(obj);
+        });
+        setFilterData(array);
       });
     } catch (err) {
       console.log(err);
@@ -97,6 +112,48 @@ export const ProductType = () => {
   useEffect(() => {
     apiGetProduct();
   }, [addProduct]);
+  useEffect(() => {
+    if (addProduct == false) {
+      setGetId("");
+    }
+  }, [addProduct]);
+  const deleteData = () => {
+    if (!getId) {
+      toast.error("Error: Product ID is missing!");
+      return;
+    }
+
+    const url = `/filter/delete-filter/${getId}`;
+
+    apiDeleteMethod(url)
+      .then((response) => {
+        setDeleteModal(false);
+        setData((prevData) => {
+          return prevData.filter((item) => item._id !== getId);
+        });
+        toast.success(response?.message || "Deleted successfully!");
+      })
+      .catch((err) => {
+        toast.error(err?.data?.message || "An error occurred while deleting.");
+      });
+  };
+
+  const editById = () => {
+    apiGetMethod(`${apiRoute.editProductyId}/${getId}`)
+      .then((res) => {
+        setInitialValue({
+          filter: res?.data?.filter || "",
+        });
+      })
+      .catch((err) => {
+        toast.error(err?.data?.message || "An error occurred while deleting.");
+      });
+  };
+  useEffect(() => {
+    if (getId !== "" && addProduct == true) {
+      editById();
+    }
+  }, [getId]);
   return (
     <Box>
       <div className="flexTop">
@@ -172,7 +229,7 @@ export const ProductType = () => {
                         setFieldValue,
                       }) => (
                         <Form>
-                          <Grid2 container columnSpacing={2} rowSpacing={2}>
+                          <Grid2 container  rowSpacing={2}>
                             <Grid2 size={12}>
                               <h4
                                 style={{
@@ -184,6 +241,22 @@ export const ProductType = () => {
                                 Product
                               </h4>
                             </Grid2>
+                            <Grid2 size={12} mb={2}>
+                            <Autocomplete
+                              name="filterId"
+                              disablePortal
+                              options={filterData}
+                              sx={{ width: 470 }}
+                              renderInput={(params) => (
+                                <TextField {...params} label="Product" />
+                              )}
+                            />
+                            <ErrorMessage
+                              name="filterId"
+                              component="div"
+                              className="error"
+                            />
+                          </Grid2>
                             <Field
                               as={TextField}
                               className="inputText"
@@ -200,6 +273,7 @@ export const ProductType = () => {
                               className="error"
                             />
                           </Grid2>
+                         
                           <div
                             style={{
                               display: "flex",
