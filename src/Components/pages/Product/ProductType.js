@@ -18,7 +18,7 @@ import AddIcon from "@mui/icons-material/Add";
 import TableToolbar from "../../../Tableui/TableToolbar";
 import Scrollbar from "../../../Scrollbar/scrollbar";
 import TableHeadCell from "../../../Tableui/TableHeadCell";
-import { ProductHeader } from "../../../common/HeadCell";
+import { ProductHeader, ProductTypeHeader } from "../../../common/HeadCell";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { BootstrapTooltipUi } from "../../../Tableui/BootstrapToolTip";
@@ -32,6 +32,7 @@ import {
 } from "../../../api";
 import { apiRoute } from "../../../api/route";
 import { toast } from "react-toastify";
+import DeleteModal from "../../../common/DeleteModal";
 const style = {
   position: "absolute",
   top: "50%",
@@ -45,10 +46,15 @@ const style = {
 };
 const validationSchema = Yup.object().shape({
   filter: Yup.string().required("Filter Type is required"),
-  filterId: Yup.string().required("Filter is required"),
+  filterId: Yup.object()
+    .shape({
+      value: Yup.string().required("Filter is required"), // Ensure `value` exists
+      label: Yup.string(),
+    })
+    .nullable()
+    .required("Filter is required"),
 });
 export const ProductType = () => {
-  const headLabel = ["Carbon", "Sediment"];
   const [addProduct, setAddProduct] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [data, setData] = useState([]);
@@ -56,35 +62,35 @@ export const ProductType = () => {
   const [getId, setGetId] = useState("");
   const [initialValues, setInitialValue] = useState({
     filter: "",
-    filterId: "",
+    filterId: [],
   });
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      console.log(values,"========values=====")
-      const obj = { name: values.filter, modelId: values.filterId };
-      // let response = getId
-      //   ? await apiPutMethod(`${apiRoute.editFilterType}/${getId}`, obj)
-      //   : await apiPostMethod(`${apiRoute.filterType}`, obj);
-      // if (response) {
-      //   if (getId) {
-      //     setData((prevData) => {
-      //       const _tempData = [...prevData];
-      //       const updatedIndex = _tempData.findIndex(
-      //         (fi) => fi._id === response.data._id
-      //       );
-      //       _tempData[updatedIndex] = response.data;
-      //       return _tempData;
-      //     });
-      //     toast.success("FilterType Updated Successfully");
-      //   } else {
-      //     setData((prevData) => {
-      //       return [...prevData, response.data];
-      //     });
-      //     toast.success("FilterType Added Successfully");
-      //   }
-      // } else {
-      //   toast.error(`Error: Failed to ${getId ? "Update" : "Add"} filter!`);
-      // }
+      const obj = { name: values.filter, modelId: values.filterId?.value };
+      let response = getId
+        ? await apiPutMethod(`${apiRoute.editFilterType}/${getId}`, obj)
+        : await apiPostMethod(`${apiRoute.filterType}`, obj);
+      if (response) {
+        if (getId) {
+          setData((prevData) => {
+            const _tempData = [...prevData];
+            const updatedIndex = _tempData.findIndex(
+              (fi) => fi._id === response.data._id
+            );
+            _tempData[updatedIndex] = response.data;
+            return _tempData;
+          });
+          toast.success("FilterType Updated Successfully");
+        } else {
+          setData((prevData) => {
+            return [...prevData, response.data];
+          });
+          toast.success("FilterType Added Successfully");
+        }
+        apiGetAllData();
+      } else {
+        toast.error(`Error: Failed to ${getId ? "Update" : "Add"} filter!`);
+      }
     } catch (err) {
       toast.error(err?.data?.message);
     } finally {
@@ -110,20 +116,32 @@ export const ProductType = () => {
     }
   };
   useEffect(() => {
-    apiGetProduct();
-  }, [addProduct]);
-  useEffect(() => {
+    if (addProduct == true) {
+      apiGetProduct();
+    }
     if (addProduct == false) {
       setGetId("");
     }
   }, [addProduct]);
+  const apiGetAllData = async () => {
+    try {
+      await apiGetMethod(`${apiRoute.getProductType}`).then((res) => {
+        setData(res?.data);
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  useEffect(() => {
+    apiGetAllData();
+  }, []);
   const deleteData = () => {
     if (!getId) {
       toast.error("Error: Product ID is missing!");
       return;
     }
 
-    const url = `/filter/delete-filter/${getId}`;
+    const url = `/filter-type/delete-filter/${getId}`;
 
     apiDeleteMethod(url)
       .then((response) => {
@@ -139,14 +157,32 @@ export const ProductType = () => {
   };
 
   const editById = () => {
-    apiGetMethod(`${apiRoute.editProductyId}/${getId}`)
+    apiGetMethod(`${apiRoute.editFilterTypeId}/${getId}`)
       .then((res) => {
+        const selectedFilter = res?.data?.modelId
+          ? {
+              value: res?.data?.modelId?._id,
+              label: res?.data?.modelId?.filter,
+            }
+          : null; // Agar modelId null ho toh empty
+
         setInitialValue({
-          filter: res?.data?.filter || "",
+          filter: res?.data?.name || "",
+          filterId: selectedFilter, // ✅ Correct format
+        });
+
+        setFilterData((prevData) => {
+          if (
+            selectedFilter &&
+            !prevData.some((item) => item.value === selectedFilter.value)
+          ) {
+            return [...prevData, selectedFilter];
+          }
+          return prevData;
         });
       })
       .catch((err) => {
-        toast.error(err?.data?.message || "An error occurred while deleting.");
+        toast.error(err?.data?.message || "An error occurred while fetching.");
       });
   };
   useEffect(() => {
@@ -162,7 +198,10 @@ export const ProductType = () => {
           color="inherit"
           startIcon={<AddIcon />}
           className="blueButton ms-2"
-          onClick={() => setAddProduct(true)}
+          onClick={() => {
+            setAddProduct(true);
+            setInitialValue({ filter: "", filterId: [] });
+          }}
         >
           Add Product Type
         </Button>
@@ -178,35 +217,57 @@ export const ProductType = () => {
                 minWidth: 800,
               }}
             >
-              <TableHeadCell headLabel={ProductHeader} />
+              <TableHeadCell headLabel={ProductTypeHeader} />
               <TableBody>
-                {headLabel?.map((item, idx) => {
-                  return (
-                    <TableRow>
-                      <TableCell>{item}</TableCell>
-                      <TableCell align="center">
-                        <BootstrapTooltipUi title="Edit" placement="top">
-                          <IconButton
-                            className="outerborder"
-                            aria-label="Edit"
-                            // onClick={() => editUser(id)}
-                          >
-                            <DriveFileRenameOutlineIcon />
-                          </IconButton>
-                        </BootstrapTooltipUi>
-                        <BootstrapTooltipUi title="Edit" placement="top">
-                          <IconButton
-                            className="outerborder"
-                            aria-label="Edit"
-                            // onClick={() => editUser(id)}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </BootstrapTooltipUi>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {data?.length > 0 ? (
+                  data?.map((item, idx) => {
+                    return (
+                      <TableRow>
+                        <TableCell>{item?.modelname || "-"}</TableCell>
+                        <TableCell>{item?.name}</TableCell>
+                        <TableCell align="center">
+                          <BootstrapTooltipUi title="Edit" placement="top">
+                            <IconButton
+                              className="outerborder"
+                              aria-label="Edit"
+                              onClick={() => {
+                                {
+                                  setGetId(item?._id);
+                                  setAddProduct(true);
+                                }
+                              }}
+                            >
+                              <DriveFileRenameOutlineIcon />
+                            </IconButton>
+                          </BootstrapTooltipUi>
+                          <BootstrapTooltipUi title="Edit" placement="top">
+                            <IconButton
+                              className="outerborder"
+                              aria-label="Edit"
+                              onClick={() => {
+                                {
+                                  setGetId(item?._id);
+                                  setDeleteModal(true);
+                                }
+                              }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </BootstrapTooltipUi>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={ProductHeader?.length}
+                      style={{ textAlign: "center", fontWeight: 700 }}
+                    >
+                      No Data Found
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
               {addProduct && (
                 <Modal
@@ -229,7 +290,7 @@ export const ProductType = () => {
                         setFieldValue,
                       }) => (
                         <Form>
-                          <Grid2 container  rowSpacing={2}>
+                          <Grid2 container rowSpacing={2}>
                             <Grid2 size={12}>
                               <h4
                                 style={{
@@ -242,21 +303,28 @@ export const ProductType = () => {
                               </h4>
                             </Grid2>
                             <Grid2 size={12} mb={2}>
-                            <Autocomplete
-                              name="filterId"
-                              disablePortal
-                              options={filterData}
-                              sx={{ width: 470 }}
-                              renderInput={(params) => (
-                                <TextField {...params} label="Product" />
-                              )}
-                            />
-                            <ErrorMessage
-                              name="filterId"
-                              component="div"
-                              className="error"
-                            />
-                          </Grid2>
+                              <Autocomplete
+                                name="filterId"
+                                disablePortal
+                                options={filterData}
+                                value={values.filterId || null} // ✅ Ensure correct selection
+                                getOptionLabel={(option) => option.label || ""}
+                                isOptionEqualToValue={(option, value) =>
+                                  option.value === value?.value
+                                }
+                                onChange={(event, newValue) =>
+                                  setFieldValue("filterId", newValue)
+                                }
+                                renderInput={(params) => (
+                                  <TextField {...params} label="Product" />
+                                )}
+                              />
+                              <ErrorMessage
+                                name="filterId"
+                                component="div"
+                                className="error"
+                              />
+                            </Grid2>
                             <Field
                               as={TextField}
                               className="inputText"
@@ -273,7 +341,7 @@ export const ProductType = () => {
                               className="error"
                             />
                           </Grid2>
-                         
+
                           <div
                             style={{
                               display: "flex",
@@ -303,6 +371,13 @@ export const ProductType = () => {
                     </Formik>
                   </Box>
                 </Modal>
+              )}
+              {deleteModal && (
+                <DeleteModal
+                  isModalOpen={deleteModal}
+                  setIsModalOpen={setDeleteModal}
+                  deleteData={deleteData}
+                />
               )}
             </Table>
           </TableContainer>
