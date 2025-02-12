@@ -4,7 +4,8 @@ import { MainLayout } from './Components/Mainlayout';
 import { Product } from './Components/pages/Product/Product';
 import { ProductType } from './Components/pages/Product/ProductType';
 import { Order } from './Components/pages/Order/Order';
-import { Addorder } from './Components/pages/Order/AddOrder';
+import { AddOrder } from './Components/pages/Order/AddOrder';
+
 function App() {
   return (
     <div className="App">
@@ -19,7 +20,7 @@ function App() {
              <Route path="/order"
             element={<MainLayout><Order/></MainLayout>} />
             <Route path="/add-order"
-            element={<MainLayout><Addorder/></MainLayout>} />
+            element={<MainLayout><AddOrder/></MainLayout>} />
         </Routes>
       </BrowserRouter>
     </div>
