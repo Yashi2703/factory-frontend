@@ -8,4 +8,6 @@ export const apiRoute = {
   editFilterType: "/filter-type/edit-filter",
   getProductType: "/filter-type/filter",
   editFilterTypeId: "/filter-type/filter-byid",
+  getParticularFilter:"/filter-type/filter-byid",
+  addOrder:"/order/add-order"
 };
